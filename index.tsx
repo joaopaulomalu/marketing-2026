@@ -34,7 +34,8 @@ interface CustomAction {
 }
 
 // --- Constants ---
-const STORAGE_KEY = 'adv_mkt_2026_v3_persistence';
+// Chave estável para evitar perda de dados em atualizações de código
+const STORAGE_KEY = 'legal_planner_2026_core_data';
 
 const INITIAL_PLAN: MonthPlan[] = [
   { id: 0, month: "Janeiro", focus: "Planejamento & Distratos", strategy: "Início de ano, foco em financeiro e distratos imobiliários.", articles: [
@@ -76,6 +77,21 @@ const INITIAL_PLAN: MonthPlan[] = [
     { id: 'ago1', category: "Inventário", title: "Doação em Vida vs Inventário: Custos", keyword: "doação", intent: "Comparativo", status: 'pending' },
     { id: 'ago2', category: "Execução", title: "Bem de Família e Penhora: Limites Legais", keyword: "bem família", intent: "Defesa", status: 'pending' },
     { id: 'ago3', category: "Imobiliário", title: "Taxa de Corretagem no Distrato: É devida?", keyword: "corretagem", intent: "Dúvida", status: 'pending' }
+  ]},
+  { id: 8, month: "Setembro", focus: "Consumidor & Contratos", strategy: "Semana do cliente. Foco em revisão de cláusulas abusivas.", articles: [
+    { id: 'set1', category: "Imobiliário", title: "Cláusulas Abusivas em Contratos Imobiliários", keyword: "cláusulas", intent: "Educativo", status: 'pending' },
+    { id: 'set2', category: "Consumidor", title: "Direito de Arrependimento em Compras Online", keyword: "arrependimento", intent: "Informativo", status: 'pending' },
+    { id: 'set3', category: "Execução", title: "Defesa do Consumidor contra Bancos", keyword: "bancos", intent: "Autoridade", status: 'pending' }
+  ]},
+  { id: 9, month: "Outubro", focus: "Patrimônio & Proteção", strategy: "Mês focado em holding e proteção patrimonial.", articles: [
+    { id: 'out1', category: "Empresarial", title: "Holding Familiar: Como proteger seu patrimônio", keyword: "holding", intent: "Autoridade", status: 'pending' },
+    { id: 'out2', category: "Imobiliário", title: "Regularização de Imóveis via Usucapião", keyword: "usucapião", intent: "Solução", status: 'pending' },
+    { id: 'out3', category: "Inventário", title: "Inventário Negativo: Quando é necessário?", keyword: "inventário negativo", intent: "Dúvida", status: 'pending' }
+  ]},
+  { id: 10, month: "Novembro", focus: "Reta Final de Crédito", strategy: "Recuperação de ativos antes do fechamento do ano.", articles: [
+    { id: 'nov1', category: "Execução", title: "Como agilizar a cobrança de dívidas", keyword: "cobrança", intent: "Urgência", status: 'pending' },
+    { id: 'nov2', category: "Imobiliário", title: "Compra de Imóveis em Leilão: Riscos e Ganhos", keyword: "leilão", intent: "Investimento", status: 'pending' },
+    { id: 'nov3', category: "Geral", title: "Impacto da Black Friday nos Prazos de Entrega", keyword: "prazos", intent: "Alerta", status: 'pending' }
   ]},
   { id: 11, month: "Dezembro", focus: "Retrospectiva & Recesso", strategy: "Dicas práticas para o período de recesso e prazos.", articles: [
     { id: 'dez1', category: "Geral", title: "Recesso Forense 2026 e a Contagem de Prazos", keyword: "recesso", intent: "Informativo", status: 'pending' },
@@ -129,14 +145,17 @@ const Checkbox = ({ checked, onChange, title }: { checked: boolean, onChange: (c
 // --- Main App ---
 
 const App: React.FC = () => {
-  // CRITICAL: LAZY INITIALIZATION TO PREVENT DATA LOSS
+  // CRITICAL: LAZY INITIALIZATION FROM LOCAL STORAGE
   const [plan, setPlan] = useState<MonthPlan[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.plan || INITIAL_PLAN;
-      } catch (e) { return INITIAL_PLAN; }
+        if (parsed.plan && Array.isArray(parsed.plan) && parsed.plan.length > 0) {
+          // Merge logic to ensure new initial months are added if missing in storage
+          return parsed.plan;
+        }
+      } catch (e) { console.error("Error parsing saved plan", e); }
     }
     return INITIAL_PLAN;
   });
@@ -146,8 +165,10 @@ const App: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.customActions || [];
-      } catch (e) { return []; }
+        if (parsed.customActions && Array.isArray(parsed.customActions)) {
+          return parsed.customActions;
+        }
+      } catch (e) { console.error("Error parsing saved actions", e); }
     }
     return [];
   });
@@ -267,9 +288,9 @@ const App: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const { plan: rPlan, customActions: rCustom } = JSON.parse(event.target?.result as string);
-        if (rPlan) setPlan(rPlan);
-        if (rCustom) setCustomActions(rCustom);
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.plan) setPlan(parsed.plan);
+        if (parsed.customActions) setCustomActions(parsed.customActions);
         alert('Dados restaurados com sucesso!');
       } catch (err) {
         alert('Erro ao restaurar backup.');
@@ -278,7 +299,7 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const currentMonthData = plan[currentMonthId];
+  const currentMonthData = plan.find(m => m.id === currentMonthId) || plan[0];
   const currentMonthCustoms = customActions.filter(a => a.monthId === currentMonthId);
 
   return (
@@ -313,10 +334,10 @@ const App: React.FC = () => {
               <div className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 transition-all duration-1000 ease-out" style={{ width: `${stats.percent}%` }} />
             </div>
             <div className="flex gap-2 border-l border-slate-200 pl-4">
-                <button onClick={downloadBackup} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                <button onClick={downloadBackup} title="Baixar Backup" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
                     <i className="fas fa-download"></i>
                 </button>
-                <button onClick={() => fileInputRef.current?.click()} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                <button onClick={() => fileInputRef.current?.click()} title="Restaurar Backup" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
                     <i className="fas fa-upload"></i>
                     <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={restoreBackup} />
                 </button>
@@ -393,7 +414,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="max-w-7xl mx-auto w-full px-4 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 mt-8">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.3.0</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.3.1</p>
         <div className={`flex items-center gap-2 transition-opacity ${isSaving ? 'opacity-100' : 'opacity-40'}`}>
             <i className={`fas fa-cloud-arrow-up text-xs ${isSaving ? 'text-indigo-500 animate-bounce' : 'text-slate-400'}`}></i>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{isSaving ? 'Salvando...' : `Sincronizado às ${lastSaved}`}</span>
@@ -421,7 +442,7 @@ const ArticleCard: React.FC<{ article: Article, onCycle: () => void, onToggle: (
       <div className="flex gap-4 items-start">
         <div className="flex flex-col items-center gap-2 pt-1">
           <Checkbox checked={isCompleted} onChange={onToggle} />
-          <button onClick={onCycle} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-400'}`}>
+          <button onClick={onCycle} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
             <i className={`fas ${isCompleted ? 'fa-check' : getCategoryIcon(article.category)}`}></i>
           </button>
         </div>
@@ -449,14 +470,13 @@ const CustomActionCard: React.FC<{ action: CustomAction, onCycle: () => void, on
       <div className="flex gap-4 items-start">
         <div className="flex flex-col items-center gap-2 pt-1">
           <Checkbox checked={isCompleted} onChange={onToggle} />
-          <button onClick={onCycle} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-400'}`}>
+          <button onClick={onCycle} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-50 text-slate-400'}`}>
             <i className={`fas ${isCompleted ? 'fa-check' : 'fa-star'}`}></i>
           </button>
         </div>
         <div className="flex-1">
           <div className="flex justify-between items-start mb-3 mr-6">
             <span className="text-[10px] font-black uppercase text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{action.type}</span>
-            {/* Fix: use action instead of article */}
             <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${getStatusStyles(action.status)}`}>{getStatusLabel(action.status)}</span>
           </div>
           <h4 className={`font-black text-slate-800 mb-4 text-[15px] ${isCompleted ? 'line-through text-slate-400' : ''}`}>{action.title}</h4>
@@ -529,14 +549,18 @@ const ReportView = ({ plan, customs }: { plan: MonthPlan[], customs: CustomActio
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {allActions.map(action => (
-              <tr key={action.id} className="hover:bg-slate-50/30 transition-colors">
-                <td className="px-10 py-5 text-sm font-bold text-slate-600">{action.month}</td>
-                <td className="px-6 py-5"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md">{action.categoryOrChannel}</span></td>
-                <td className="px-6 py-5 text-sm font-black text-slate-800">{action.title}</td>
-                <td className="px-10 py-5 text-right"><span className={`text-[9px] font-black uppercase px-4 py-1.5 rounded-full border ${getStatusStyles(action.status)}`}>{getStatusLabel(action.status)}</span></td>
-              </tr>
-            ))}
+            {allActions.length === 0 ? (
+              <tr><td colSpan={4} className="p-20 text-center text-slate-400 font-bold italic">Nenhuma ação cadastrada.</td></tr>
+            ) : (
+              allActions.map(action => (
+                <tr key={action.id} className="hover:bg-slate-50/30 transition-colors">
+                  <td className="px-10 py-5 text-sm font-bold text-slate-600">{action.month}</td>
+                  <td className="px-6 py-5"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md">{action.categoryOrChannel}</span></td>
+                  <td className="px-6 py-5 text-sm font-black text-slate-800">{action.title}</td>
+                  <td className="px-10 py-5 text-right"><span className={`text-[9px] font-black uppercase px-4 py-1.5 rounded-full border ${getStatusStyles(action.status)}`}>{getStatusLabel(action.status)}</span></td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -585,6 +609,7 @@ const AddActionModal = ({ onClose, onAdd, months, initialMonthId }: any) => {
   const [isCustom, setIsCustom] = useState(false);
 
   const handleSave = () => {
+    if (!formData.title.trim()) { alert("Digite um título para a ação."); return; }
     const finalChannel = isCustom ? customChannel : formData.channel;
     onAdd({ ...formData, channel: finalChannel });
   };
@@ -602,38 +627,4 @@ const AddActionModal = ({ onClose, onAdd, months, initialMonthId }: any) => {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Título da Atividade</label>
-            <input type="text" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="Ex: Vídeo de Herança" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Formato</label>
-              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})}>
-                <option>Post</option><option>Artigo</option><option>Vídeo</option><option>Email</option><option>Newsletter</option><option>GERAL</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Rede / Canal</label>
-              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={isCustom ? 'Custom' : formData.channel} onChange={e=>{ if(e.target.value === 'Custom') { setIsCustom(true); } else { setIsCustom(false); setFormData({...formData, channel: e.target.value}); } }}>
-                <option>Instagram</option><option>LinkedIn</option><option>WhatsApp</option><option>Blog</option><option>Jusbrasil</option><option value="Custom">Outro (Personalizado)...</option>
-              </select>
-            </div>
-          </div>
-          {isCustom && (
-              <div className="animate-fade-in"><input type="text" className="w-full bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-sm font-bold outline-none" placeholder="Digite o nome da rede..." value={customChannel} onChange={e=>setCustomChannel(e.target.value)} /></div>
-          )}
-          <div className="flex gap-4 pt-4">
-              <button onClick={onClose} className="flex-1 py-4 text-sm font-black text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
-              <button onClick={handleSave} className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all">Adicionar ao Plano</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Render ---
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  createRoot(rootElement).render(<App />);
-}
+            <label className="text-[10px] font-black text-sl
