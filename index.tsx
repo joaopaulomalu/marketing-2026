@@ -34,8 +34,12 @@ interface CustomAction {
 }
 
 // --- Constants ---
-// MANTEMOS A MESMA CHAVE PARA NÃO PERDER SEUS DADOS ATUAIS
-const STORAGE_KEY = 'legal_planner_2026_core_v4';
+const STORAGE_KEY = 'legal_planner_2026_core_v5';
+const LEGACY_KEYS = [
+    'legal_planner_2026_core_v4',
+    'legal_planner_2026_core_data',
+    'legal_marketing_planner_2026'
+];
 
 const INITIAL_PLAN: MonthPlan[] = [
   { id: 0, month: "Janeiro", focus: "Planejamento & Distratos", strategy: "Início de ano, foco em financeiro e distratos imobiliários.", articles: [
@@ -145,17 +149,28 @@ const Checkbox = ({ checked, onChange, title }: { checked: boolean, onChange: (c
 // --- Main App ---
 
 const App: React.FC = () => {
-  // CRITICAL: SMART MERGE LOGIC - ENSURES 12 MONTHS WITHOUT WIPING USER DATA
+  // CRITICAL: DATA MIGRATION AND SMART MERGE
   const [plan, setPlan] = useState<MonthPlan[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    let savedData = localStorage.getItem(STORAGE_KEY);
+    
+    // IF CURRENT KEY IS EMPTY, LOOK FOR LEGACY DATA
+    if (!savedData) {
+        for (const legacyKey of LEGACY_KEYS) {
+            const legacyData = localStorage.getItem(legacyKey);
+            if (legacyData) {
+                savedData = legacyData;
+                break;
+            }
+        }
+    }
+
+    if (savedData) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedData);
         if (parsed.plan && Array.isArray(parsed.plan)) {
-          // Reconstruct the 12 months plan by looking into saved data first
+          // Reconstruct 12 months, merging saved progress where available
           return INITIAL_PLAN.map(initialMonth => {
             const savedMonth = parsed.plan.find((m: any) => m.id === initialMonth.id);
-            // If found in save, keep it. If not (new months like Sep-Nov), use initial.
             return savedMonth || initialMonth;
           });
         }
@@ -165,10 +180,22 @@ const App: React.FC = () => {
   });
 
   const [customActions, setCustomActions] = useState<CustomAction[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    let savedData = localStorage.getItem(STORAGE_KEY);
+
+    // IF CURRENT KEY IS EMPTY, LOOK FOR LEGACY DATA
+    if (!savedData) {
+        for (const legacyKey of LEGACY_KEYS) {
+            const legacyData = localStorage.getItem(legacyKey);
+            if (legacyData) {
+                savedData = legacyData;
+                break;
+            }
+        }
+    }
+
+    if (savedData) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedData);
         if (parsed.customActions && Array.isArray(parsed.customActions)) {
           return parsed.customActions;
         }
@@ -237,6 +264,7 @@ const App: React.FC = () => {
   const resetPlan = () => {
     if (confirm('ATENÇÃO: Isso apagará todo o seu progresso local. Deseja continuar?')) {
       localStorage.removeItem(STORAGE_KEY);
+      LEGACY_KEYS.forEach(key => localStorage.removeItem(key));
       setPlan(INITIAL_PLAN);
       setCustomActions([]);
       window.location.reload();
@@ -418,7 +446,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="max-w-7xl mx-auto w-full px-4 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 mt-8">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.4.0</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.5.0</p>
         <div className={`flex items-center gap-2 transition-opacity ${isSaving ? 'opacity-100' : 'opacity-40'}`}>
             <i className={`fas fa-cloud-arrow-up text-xs ${isSaving ? 'text-indigo-500 animate-bounce' : 'text-slate-400'}`}></i>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{isSaving ? 'Salvando...' : `Sincronizado às ${lastSaved}`}</span>
@@ -506,15 +534,15 @@ const StrategyView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {[
         { step: 1, title: 'Blog (Conteúdo Pilar)', desc: 'Artigo completo e técnico para SEO. A base de todo o ecossistema.', icon: 'fa-solid fa-feather-pointed', color: 'bg-slate-800' },
-        { step: 2, title: 'LinkedIn (Pulse/Artigo)', desc: 'Resumo dos 3 principais parágrafos + Link para o artigo original.', icon: 'fa-brands fa-linkedin-in', color: 'bg-[#0077B5]' },
+        { step: 2, title: 'LinkedIn (Pulse/Artigo)', desc: 'Resumo dos 3 principais parágrafos + Link para o artigo original.', icon: 'fa-brands fa-linkedin', color: 'bg-[#0077B5]' },
         { step: 3, title: 'Jusbrasil (Delay 7 Dias)', desc: 'Republicação integral com link "Fonte Original" para autoridade extra.', icon: 'fa-solid fa-scale-balanced', color: 'bg-slate-600' },
-        { step: 4, title: 'Instagram (Carrossel)', desc: 'Títulos H2 viram 4-6 imagens no Canva com linguagem visual direta.', icon: 'fa-brands fa-instagram', color: 'bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045]' },
+        { step: 4, title: 'Instagram (Carrossel)', desc: 'Títulos H2 viram 4-6 imagens no Canva com linguagem visual direta.', icon: 'fa-brands fa-instagram', color: 'bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888]' },
         { step: 5, title: 'WhatsApp (Status)', desc: 'Link do artigo acompanhado de uma pergunta instigante para gerar cliques.', icon: 'fa-brands fa-whatsapp', color: 'bg-[#25D366]' },
         { step: 6, title: 'Google Meu Negócio', desc: 'Postagem tipo "Atualização": Foto + Resumo de 2 linhas + Botão "Saiba Mais".', icon: 'fa-solid fa-location-dot', color: 'bg-[#4285F4]' }
       ].map((s, i) => (
         <div key={i} className="bg-white p-8 rounded-[32px] border border-slate-100 hover:shadow-xl transition-all relative overflow-hidden group">
           <div className="absolute top-4 right-6 text-4xl font-black text-slate-50 group-hover:text-slate-100 transition-colors">{s.step}</div>
-          <div className={`w-14 h-14 ${s.color} text-white rounded-2xl flex items-center justify-center mb-6 text-xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6`}><i className={s.icon}></i></div>
+          <div className={`w-14 h-14 ${s.color} text-white rounded-2xl flex items-center justify-center mb-6 text-xl shadow-lg transition-all group-hover:scale-110 group-hover:rotate-6`}><i className={s.icon}></i></div>
           <h4 className="text-xl font-black mb-3 text-slate-800">{s.title}</h4>
           <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
         </div>
