@@ -432,7 +432,7 @@ const ArticleCard: React.FC<{ article: Article, onCycle: () => void, onToggle: (
           </div>
           <h4 className={`font-black text-slate-800 mb-4 text-[15px] ${isCompleted ? 'line-through text-slate-400' : ''}`}>{article.title}</h4>
           <div className="flex justify-between items-center">
-             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{article.keyword}</span>
+             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{article.keyword}</span>
              <button onClick={onAI} className="text-[10px] font-black text-indigo-600 bg-white border border-indigo-100 px-4 py-2 rounded-xl shadow-sm hover:bg-indigo-600 hover:text-white transition-all">Escrever c/ IA</button>
           </div>
         </div>
@@ -456,11 +456,12 @@ const CustomActionCard: React.FC<{ action: CustomAction, onCycle: () => void, on
         <div className="flex-1">
           <div className="flex justify-between items-start mb-3 mr-6">
             <span className="text-[10px] font-black uppercase text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{action.type}</span>
+            {/* Fix: use action instead of article */}
             <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${getStatusStyles(action.status)}`}>{getStatusLabel(action.status)}</span>
           </div>
           <h4 className={`font-black text-slate-800 mb-4 text-[15px] ${isCompleted ? 'line-through text-slate-400' : ''}`}>{action.title}</h4>
           <div className="flex justify-between items-center">
-             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{action.channel}</span>
+             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{action.channel}</span>
              <button onClick={onAI} className="text-[10px] font-black text-purple-600 bg-white border border-purple-100 px-4 py-2 rounded-xl shadow-sm hover:bg-purple-600 hover:text-white transition-all">Detalhar c/ IA</button>
           </div>
         </div>
@@ -474,18 +475,22 @@ const StrategyView = () => (
     <div className="bg-slate-900 rounded-[40px] p-10 md:p-16 text-white relative overflow-hidden shadow-2xl">
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-500/20 to-transparent"></div>
       <div className="relative z-10 max-w-2xl">
-        <h2 className="text-4xl font-black tracking-tighter mb-6">Pilares de Crescimento</h2>
-        <p className="text-lg text-slate-300 leading-relaxed mb-8">Autoridade não é o que você diz que é, é o que o seu conteúdo prova que você é. Siga os 3 pilares fundamentais.</p>
+        <h2 className="text-4xl font-black tracking-tighter mb-6">Método de Multiplicação</h2>
+        <p className="text-lg text-slate-300 leading-relaxed mb-8">Maximize o alcance da sua autoridade jurídica seguindo este fluxo estruturado de reciclagem de conteúdo.</p>
       </div>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {[
-        { title: 'Blog Pillar', desc: 'Conteúdo denso (1.500+ palavras) focado em SEO para captar buscas orgânicas de potenciais clientes no Google.', icon: 'fa-blog', color: 'bg-slate-800' },
-        { title: 'Recycling', desc: 'Transforme cada artigo técnico em 1 carrossel educativo para Instagram e 2 publicações de valor no LinkedIn.', icon: 'fa-instagram', color: 'bg-indigo-600' },
-        { title: 'Newsletter', desc: 'Envie o resumo quinzenal da sua autoridade diretamente para sua base de clientes e leads frios.', icon: 'fa-envelope', color: 'bg-emerald-600' }
+        { step: 1, title: 'Blog (Conteúdo Pilar)', desc: 'Artigo completo e técnico para SEO. A base de todo o ecossistema.', icon: 'fa-feather-pointed', color: 'bg-slate-800' },
+        { step: 2, title: 'LinkedIn (Pulse/Artigo)', desc: 'Resumo dos 3 principais parágrafos + Link para o artigo original.', icon: 'fa-linkedin-in', color: 'bg-blue-700' },
+        { step: 3, title: 'Jusbrasil (Delay 7 Dias)', desc: 'Republicação integral com link "Fonte Original" para autoridade extra.', icon: 'fa-scale-balanced', color: 'bg-slate-600' },
+        { step: 4, title: 'Instagram (Carrossel)', desc: 'Títulos H2 viram 4-6 imagens no Canva com linguagem visual direta.', icon: 'fa-instagram', color: 'bg-indigo-600' },
+        { step: 5, title: 'WhatsApp (Status)', desc: 'Link do artigo acompanhado de uma pergunta instigante para gerar cliques.', icon: 'fa-whatsapp', color: 'bg-emerald-600' },
+        { step: 6, title: 'Google Meu Negócio', desc: 'Postagem tipo "Atualização": Foto + Resumo de 2 linhas + Botão "Saiba Mais".', icon: 'fa-location-dot', color: 'bg-red-600' }
       ].map((s, i) => (
-        <div key={i} className="bg-white p-8 rounded-[32px] border border-slate-100 text-center hover:shadow-xl transition-all">
-          <div className={`w-16 h-16 ${s.color} text-white rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl shadow-lg`}><i className={`fas ${s.icon}`}></i></div>
+        <div key={i} className="bg-white p-8 rounded-[32px] border border-slate-100 hover:shadow-xl transition-all relative overflow-hidden group">
+          <div className="absolute top-4 right-6 text-4xl font-black text-slate-50 group-hover:text-slate-100 transition-colors">{s.step}</div>
+          <div className={`w-14 h-14 ${s.color} text-white rounded-2xl flex items-center justify-center mb-6 text-xl shadow-lg`}><i className={`fas ${s.icon}`}></i></div>
           <h4 className="text-xl font-black mb-3 text-slate-800">{s.title}</h4>
           <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
         </div>
@@ -592,30 +597,30 @@ const AddActionModal = ({ onClose, onAdd, months, initialMonthId }: any) => {
         <div className="space-y-6">
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Mês de Referência</label>
-            <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold" value={formData.monthId} onChange={e=>setFormData({...formData, monthId: Number(e.target.value)})}>
+            <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.monthId} onChange={e=>setFormData({...formData, monthId: Number(e.target.value)})}>
                 {months.map((m:any) => <option key={m.id} value={m.id}>{m.month}</option>)}
             </select>
           </div>
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Título da Atividade</label>
-            <input type="text" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="Ex: Vídeo de Herança" />
+            <input type="text" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="Ex: Vídeo de Herança" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Formato</label>
-              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold" value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})}>
+              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})}>
                 <option>Post</option><option>Artigo</option><option>Vídeo</option><option>Email</option><option>Newsletter</option><option>GERAL</option>
               </select>
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Rede / Canal</label>
-              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold" value={isCustom ? 'Custom' : formData.channel} onChange={e=>{ if(e.target.value === 'Custom') { setIsCustom(true); } else { setIsCustom(false); setFormData({...formData, channel: e.target.value}); } }}>
+              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={isCustom ? 'Custom' : formData.channel} onChange={e=>{ if(e.target.value === 'Custom') { setIsCustom(true); } else { setIsCustom(false); setFormData({...formData, channel: e.target.value}); } }}>
                 <option>Instagram</option><option>LinkedIn</option><option>WhatsApp</option><option>Blog</option><option>Jusbrasil</option><option value="Custom">Outro (Personalizado)...</option>
               </select>
             </div>
           </div>
           {isCustom && (
-              <div className="animate-fade-in"><input type="text" className="w-full bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-sm font-bold" placeholder="Digite o nome da rede..." value={customChannel} onChange={e=>setCustomChannel(e.target.value)} /></div>
+              <div className="animate-fade-in"><input type="text" className="w-full bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-sm font-bold outline-none" placeholder="Digite o nome da rede..." value={customChannel} onChange={e=>setCustomChannel(e.target.value)} /></div>
           )}
           <div className="flex gap-4 pt-4">
               <button onClick={onClose} className="flex-1 py-4 text-sm font-black text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
