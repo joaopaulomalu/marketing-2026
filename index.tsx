@@ -34,7 +34,6 @@ interface CustomAction {
 }
 
 // --- Constants ---
-// Chave estável para evitar perda de dados em atualizações de código
 const STORAGE_KEY = 'legal_planner_2026_core_data';
 
 const INITIAL_PLAN: MonthPlan[] = [
@@ -145,17 +144,20 @@ const Checkbox = ({ checked, onChange, title }: { checked: boolean, onChange: (c
 // --- Main App ---
 
 const App: React.FC = () => {
-  // CRITICAL: LAZY INITIALIZATION FROM LOCAL STORAGE
+  // CRITICAL FIX: SMART MERGE INITIALIZATION
   const [plan, setPlan] = useState<MonthPlan[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.plan && Array.isArray(parsed.plan) && parsed.plan.length > 0) {
-          // Merge logic to ensure new initial months are added if missing in storage
-          return parsed.plan;
+        if (parsed.plan && Array.isArray(parsed.plan)) {
+          // Garante que todos os meses do INITIAL_PLAN existam, preservando dados do saved
+          return INITIAL_PLAN.map(initialMonth => {
+            const savedMonth = parsed.plan.find((m: any) => m.id === initialMonth.id);
+            return savedMonth || initialMonth;
+          });
         }
-      } catch (e) { console.error("Error parsing saved plan", e); }
+      } catch (e) { console.error("Error merging saved plan", e); }
     }
     return INITIAL_PLAN;
   });
@@ -414,7 +416,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="max-w-7xl mx-auto w-full px-4 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 mt-8">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.3.1</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planejamento de Marketing 2026 • v1.3.2</p>
         <div className={`flex items-center gap-2 transition-opacity ${isSaving ? 'opacity-100' : 'opacity-40'}`}>
             <i className={`fas fa-cloud-arrow-up text-xs ${isSaving ? 'text-indigo-500 animate-bounce' : 'text-slate-400'}`}></i>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{isSaving ? 'Salvando...' : `Sincronizado às ${lastSaved}`}</span>
@@ -627,4 +629,38 @@ const AddActionModal = ({ onClose, onAdd, months, initialMonthId }: any) => {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-black text-sl
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Título da Atividade</label>
+            <input type="text" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="Ex: Vídeo de Herança" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Formato</label>
+              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})}>
+                <option>Post</option><option>Artigo</option><option>Vídeo</option><option>Email</option><option>Newsletter</option><option>GERAL</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Rede / Canal</label>
+              <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none" value={isCustom ? 'Custom' : formData.channel} onChange={e=>{ if(e.target.value === 'Custom') { setIsCustom(true); } else { setIsCustom(false); setFormData({...formData, channel: e.target.value}); } }}>
+                <option>Instagram</option><option>LinkedIn</option><option>WhatsApp</option><option>Blog</option><option>Jusbrasil</option><option value="Custom">Outro (Personalizado)...</option>
+              </select>
+            </div>
+          </div>
+          {isCustom && (
+              <div className="animate-fade-in"><input type="text" className="w-full bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-sm font-bold outline-none" placeholder="Digite o nome da rede..." value={customChannel} onChange={e=>setCustomChannel(e.target.value)} /></div>
+          )}
+          <div className="flex gap-4 pt-4">
+              <button onClick={onClose} className="flex-1 py-4 text-sm font-black text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
+              <button onClick={handleSave} className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all">Adicionar ao Plano</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Render ---
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(<App />);
+}
